@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>VibePass · modern ticketing</title>
+  <style>
+    /* ---------- RESET & GLOBAL ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    :root {
+      --bg-deep: #0b0b1a;
+      --bg-card: rgba(20, 22, 40, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.03);
+      --indigo: #7b5cff;
+      --indigo-glow: rgba(123, 92, 255, 0.3);
+      --mint: #5effc3;
+      --mint-glow: rgba(94, 255, 195, 0.2);
+      --text-primary: #f0f2ff;
+      --text-secondary: #a0a8d0;
+      --sold: #3a3d5a;
+      --available: #3ad47a;
+      --selected: #9a7bff;
+      --danger: #ff5b7a;
+      --radius-card: 24px;
+      --radius-btn: 40px;
+      --transition-smooth: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1);
+    }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      background-image: radial-gradient(circle at 20% 20%, #1e1b3e 0%, #0b0b1a 80%);
+    }
+
+    /* ---------- UTILITIES ---------- */
+    .glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 var(--glass-highlight);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .flex-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gap-1 { gap: 0.5rem; }
+    .gap-2 { gap: 1rem; }
+    .gap-3 { gap: 1.5rem; }
+
+    button {
+      background: transparent;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      transition: var(--transition-smooth);
+    }
+
+    .btn-primary {
+      background: var(--indigo);
+      color: #fff;
+      padding: 0.85rem 2rem;
+      border-radius: var(--radius-btn);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 20px -6px var(--indigo-glow);
+    }
+
+    .btn-primary:hover {
+      background: #8e74ff;
+      box-shadow: 0 12px 28px -6px var(--indigo);
+      transform: scale(1.02);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-btn);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .price-tag {
+      color: var(--mint);
+      font-weight: 700;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    /* ---------- HEADER ---------- */
+    header {
+      padding: 1.25rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(11, 11, 26, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(120deg, var(--indigo) 0%, var(--mint) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .cart-icon-btn {
+      position: relative;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .cart-icon-btn:hover {
+      background: rgba(123, 92, 255, 0.2);
+      border-color: var(--indigo);
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--indigo);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--bg-deep);
+    }
+
+    /* ---------- HERO / DISCOVERY ---------- */
+    .hero {
+      padding: 3rem 0 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 8vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      max-width: 700px;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(120deg, var(--mint), var(--indigo));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 550px;
+      margin-bottom: 2rem;
+    }
+
+    .search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 100px;
+      padding: 0.75rem 1.25rem;
+      align-items: center;
+      max-width: 800px;
+    }
+
+    .search-bar input,
+    .search-bar select {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      padding: 0.6rem 0.8rem;
+      font-size: 0.95rem;
+      border-radius: 40px;
+      outline: none;
+      flex: 1 1 120px;
+      min-width: 0;
+    }
+
+    .search-bar select option {
+      background: #1a1d32;
+      color: var(--text-primary);
+    }
+
+    .search-bar input::placeholder {
+      color: #6a7290;
+    }
+
+    .search-bar .divider {
+      width: 1px;
+      height: 24px;
+      background: var(--glass-border);
+    }
+
+    /* ---------- EVENT GRID ---------- */
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 2.5rem 0 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .event-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.75rem;
+      margin: 1.5rem 0 2rem;
+    }
+
+    .event-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      transition: var(--transition-smooth);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .event-card:hover {
+      transform: translateY(-6px) scale(1.01);
+      border-color: rgba(123, 92, 255, 0.4);
+      box-shadow: 0 24px 48px -16px var(--indigo-glow);
+    }
+
+    .card-image {
+      height: 160px;
+      background: linear-gradient(135deg, #1f1b3a, #14162e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: var(--mint);
+      position: relative;
+    }
+
+    .card-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 70% 20%, rgba(94, 255, 195, 0.15), transparent 70%);
+    }
+
+    .card-content {
+      padding: 1.25rem 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .card-content h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+    }
+
+    .get-tickets {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--indigo);
+      background: rgba(123, 92, 255, 0.12);
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      border: 1px solid rgba(123, 92, 255, 0.2);
+    }
+
+    /* ---------- DETAIL & SEATING ---------- */
+    .detail-panel {
+      margin: 2rem 0 3rem;
+      padding: 1.75rem;
+      border-radius: var(--radius-card);
+    }
+
+    .detail-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .detail-header h2 {
+      font-size: 1.9rem;
+      font-weight: 700;
+    }
+
+    .tier-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .tier-btn {
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--glass-border);
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .tier-btn.active {
+      background: var(--indigo);
+      border-color: var(--indigo);
+      color: #fff;
+      box-shadow: 0 4px 16px -4px var(--indigo-glow);
+    }
+
+    .seat-map-wrapper {
+      background: rgba(10, 12, 24, 0.6);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .stage-indicator {
+      text-align: center;
+      color: var(--mint);
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      padding: 0.6rem;
+      border-bottom: 2px solid rgba(94, 255, 195, 0.2);
+    }
+
+    .seat-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+      justify-content: center;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .seat {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      transition: var(--transition-smooth);
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: var(--available);
+      color: #0b0b1a;
+    }
+
+    .seat.sold {
+      background: var(--sold);
+      cursor: not-allowed;
+      color: #6a6f90;
+      border-color: transparent;
+    }
+
+    .seat.selected {
+      background: var(--selected);
+      color: #fff;
+      box-shadow: 0 0 16px var(--selected);
+      border-color: #fff;
+      transform: scale(1.05);
+    }
+
+    .seat.available:hover {
+      background: #5effc3;
+      transform: scale(1.1);
+      box-shadow: 0 0 12px var(--mint);
+    }
+
+    .seat-legend {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+
+    /* ---------- CART / DIALOG ---------- */
+    dialog {
+      background: transparent;
+      border: none;
+      padding: 0;
+      max-width: 460px;
+      width: 92%;
+      margin: auto;
+      border-radius: var(--radius-card);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+    }
+
+    .dialog-content {
+      background: #14162b;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-card);
+      padding: 1.75rem;
+      box-shadow: 0 40px 80px -20px #000;
+      animation: modalIn 0.3s cubic-bezier(0.2, 0.9, 0.4, 1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .cart-item:last-child {
+      border-bottom: none;
+    }
+
+    .cart-item-info h4 {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .cart-item-info p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .cart-item-price {
+      color: var(--mint);
+      font-weight: 700;
+    }
+
+    .remove-item {
+      color: var(--danger);
+      font-size: 1.2rem;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin: 1.2rem 0;
+      padding-top: 1rem;
+      border-top: 2px solid var(--indigo);
+    }
+
+    .timer-box {
+      background: rgba(123, 92, 255, 0.12);
+      border-radius: 40px;
+      padding: 0.5rem 1rem;
+      text-align: center;
+      font-weight: 600;
+      color: var(--mint);
+      margin-bottom: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- CONFIRMATION / DIGITAL PASS ---------- */
+    .digital-pass {
+      background: linear-gradient(145deg, #1a1d36, #12142a);
+      border: 1px solid var(--indigo);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .qr-placeholder {
+      width: 120px;
+      height: 120px;
+      background: repeating-linear-gradient(45deg, #fff 0px, #fff 8px, #222 8px, #222 16px);
+      border-radius: 12px;
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+
+    /* ---------- FOOTER ---------- */
+    footer {
+      margin-top: auto;
+      padding: 2rem 0;
+      border-top: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    /* ---------- MISC ---------- */
+    .hidden { display: none !important; }
+
+    .text-mint { color: var(--mint); }
+
+    @media (max-width: 600px) {
+      .seat-grid {
+        gap: 5px;
+      }
+      .seat {
+        font-size: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container flex-between">
+      <div class="logo">VibePass</div>
+      <div class="header-actions">
+        <button class="cart-icon-btn" id="cartButton" aria-label="Open cart">
+          🛒
+          <span class="cart-badge" id="cartBadge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HERO + FILTER -->
+    <section class="hero">
+      <h1>Feel the <span>vibe</span>.<br>Secure your spot.</h1>
+      <p>Discover concerts, festivals & tech conferences. Real-time seat selection, instant digital tickets.</p>
+      <div class="search-bar glass">
+        <input type="text" id="searchInput" placeholder="Search events, artists..." aria-label="Search events">
+        <span class="divider"></span>
+        <select id="genreFilter" aria-label="Filter by genre">
+          <option value="all">All genres</option>
+          <option value="music">Music</option>
+          <option value="tech">Tech</option>
+          <option value="festival">Festival</option>
+        </select>
+        <select id="cityFilter" aria-label="Filter by city">
+          <option value="all">All cities</option>
+          <option value="Berlin">Berlin</option>
+          <option value="London">London</option>
+          <option value="NYC">NYC</option>
+          <option value="Tokyo">Tokyo</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- EVENT GRID -->
+    <section>
+      <h2 class="section-title">Upcoming events</h2>
+      <div class="event-grid" id="eventGrid"></div>
+    </section>
+
+    <!-- DETAIL PANEL (hidden by default, shown on click) -->
+    <section id="detailPanel" class="detail-panel glass hidden" aria-label="Event details and seating">
+      <div class="detail-header">
+        <div>
+          <h2 id="detailTitle">Event name</h2>
+          <p id="detailVenue" style="color: var(--text-secondary);">Venue · Date</p>
+        </div>
+        <button class="btn-secondary" id="closeDetailBtn">← Back to events</button>
+      </div>
+
+      <div class="tier-selector" id="tierSelector">
+        <button class="tier-btn active" data-tier="general">General Admission</button>
+        <button class="tier-btn" data-tier="vip">VIP</button>
+        <button class="tier-btn" data-tier="front">Front Row</button>
+      </div>
+
+      <div class="seat-map-wrapper">
+        <div class="stage-indicator">✦ STAGE ✦</div>
+        <div class="seat-grid" id="seatGrid" role="grid" aria-label="Interactive seat map"></div>
+        <div class="seat-legend">
+          <span><span class="legend-dot" style="background: var(--available);"></span> Available</span>
+          <span><span class="legend-dot" style="background: var(--sold);"></span> Sold</span>
+          <span><span class="legend-dot" style="background: var(--selected);"></span> Selected</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container flex-between">
+      <span>© 2025 VibePass — demo experience</span>
+      <span style="color: var(--mint);">✦ instant digital delivery</span>
+    </div>
+  </footer>
+
+  <!-- CART DIALOG -->
+  <dialog id="cartDialog">
+    <div class="dialog-content">
+      <div class="flex-between" style="margin-bottom: 1rem;">
+        <h3 style="font-size: 1.3rem;">Your cart</h3>
+        <button id="closeCartBtn" style="font-size: 1.6rem; line-height: 1;">✕</button>
+      </div>
+      <div id="cartTimer" class="timer-box">⏳ 10:00 remaining</div>
+      <div id="cartItemsContainer"></div>
+      <div class="cart-total">
+        <span>Total</span>
+        <span id="cartTotalPrice">$0</span>
+      </div>
+      <button class="btn-primary" id="checkoutBtn" style="width: 100%; margin-top: 0.5rem;">Proceed to checkout</button>
+      <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 1rem; text-align: center;">Prices include service fees & taxes</p>
+    </div>
+  </dialog>
+
+  <!-- CHECKOUT / CONFIRMATION DIALOG -->
+  <dialog id="checkoutDialog">
+    <div class="dialog-content">
+      <h3 style="margin-bottom: 1.2rem;">Complete your purchase</h3>
+      <form id="checkoutForm">
+        <input type="email" id="emailInput" placeholder="Email address" required
+               style="width: 100%; padding: 0.9rem; border-radius: 40px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: #fff; margin-bottom: 1rem;">
+        <input type="text" id="cardInput" placeholder="Card number (demo)" required
+               style="width: 100%; padding: 0.9rem; border-radius: 40px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: #fff; margin-bottom: 1rem;">
+        <div id="checkoutTotal" style="font-weight: 700; margin-bottom: 1rem; color: var(--mint);"></div>
+        <button type="submit" class="btn-primary" style="width: 100%;">Pay & get tickets</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- DIGITAL PASS DIALOG -->
+  <dialog id="passDialog">
+    <div class="dialog-content">
+      <h3 style="color: var(--mint);">🎫 Order confirmed</h3>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Your digital tickets are ready</p>
+      <div class="digital-pass">
+        <div class="flex-between">
+          <span style="font-weight: 700;">VibePass</span>
+          <span id="orderIdDisplay" style="font-size: 0.8rem; color: var(--mint);">#VP-000</span>
+        </div>
+        <div class="qr-placeholder">QR</div>
+        <p style="font-size: 0.8rem;">Show this pass at the entrance</p>
+      </div>
+      <button id="closePassBtn" class="btn-primary" style="width: 100%;">Done</button>
+    </div>
+  </dialog>
+
+  <script>
+    (function() {
+      // ---------- DATA ----------
+      const events = [
+        { id: 1, title: 'Neon Pulse Festival', genre: 'festival', city: 'Berlin', venue: 'Kraftwerk', date: '2025-08-22', price: 89, emoji: '🎆' },
+        { id: 2, title: 'Indigo Waves', genre: 'music', city: 'London', venue: 'O2 Academy', date: '2025-09-05', price: 65, emoji: '🎸' },
+        { id: 3, title: 'Future Tech Summit', genre: 'tech', city: 'NYC', venue: 'Javits Center', date: '2025-10-12', price: 149, emoji: '🤖' },
+        { id: 4, title: 'Mint Condition', genre: 'music', city: 'Tokyo', venue: 'Shibuya Hall', date: '2025-07-30', price: 72, emoji: '🎤' },
+        { id: 5, title: 'Glasshouse Festival', genre: 'festival', city: 'Berlin', venue: 'Tempelhof', date: '2025-08-08', price: 110, emoji: '🌈' },
+        { id: 6, title: 'Quantum Dev Conference', genre: 'tech', city: 'London', venue: 'ExCeL', date: '2025-11-03', price: 199, emoji: '💻' }
+      ];
+
+      // ---------- STATE ----------
+      let cart = [];               // { eventId, seatId, tier, price }
+      let selectedEventId = null;
+      let selectedTier = 'general';
+      let timerInterval = null;
+      let timeLeft = 600;          // 10 minutes in seconds
+      let currentOrderId = null;
+
+      // DOM refs
+      const eventGrid = document.getElementById('eventGrid');
+      const detailPanel = document.getElementById('detailPanel');
+      const detailTitle = document.getElementById('detailTitle');
+      const detailVenue = document.getElementById('detailVenue');
+      const seatGrid = document.getElementById('seatGrid');
+      const cartButton = document.getElementById('cartButton');
+      const cartBadge = document.getElementById('cartBadge');
+      const cartDialog = document.getElementById('cartDialog');
+      const closeCartBtn = document.getElementById('closeCartBtn');
+      const cartItemsContainer = document.getElementById('cartItemsContainer');
+      const cartTotalPrice = document.getElementById('cartTotalPrice');
+      const cartTimer = document.getElementById('cartTimer');
+      const checkoutBtn = document.getElementById('checkoutBtn');
+      const checkoutDialog = document.getElementById('checkoutDialog');
+      const checkoutForm = document.getElementById('checkoutForm');
+      const checkoutTotal = document.getElementById('checkoutTotal');
+      const passDialog = document.getElementById('passDialog');
+      const orderIdDisplay = document.getElementById('orderIdDisplay');
+      const closePassBtn = document.getElementById('closePassBtn');
+      const closeDetailBtn = document.getElementById('closeDetailBtn');
+      const searchInput = document.getElementById('searchInput');
+      const genreFilter = document.getElementById('genreFilter');
+      const cityFilter = document.getElementById('cityFilter');
+
+      // ---------- HELPERS ----------
+      function formatPrice(n) {
+        return '$' + n.toFixed(0);
+      }
+
+      function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timeLeft = 600;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          updateTimerDisplay();
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            cart = [];
+            updateCartBadge();
+            cartDialog.close();
+            alert('Your cart session expired. Please try again.');
+          }
+        }, 1000);
+      }
+
+      function updateTimerDisplay() {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        cartTimer.textContent = `⏳ ${mins}:${secs.toString().padStart(2, '0')} remaining`;
+        if (timeLeft <= 0) cartTimer.textContent = '⏳ expired';
+      }
+
+      function stopTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+
+      function updateCartBadge() {
+        cartBadge.textContent = cart.length;
+      }
+
+      // ---------- RENDER EVENTS ----------
+      function renderEvents(filterGenre = 'all', filterCity = 'all', searchTerm = '') {
+        const filtered = events.filter(ev => {
+          const matchGenre = filterGenre === 'all' || ev.genre === filterGenre;
+          const matchCity = filterCity === 'all' || ev.city === filterCity;
+          const matchSearch = ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              ev.venue.toLowerCase().includes(searchTerm.toLowerCase());
+          return matchGenre && matchCity && matchSearch;
+        });
+
+        eventGrid.innerHTML = filtered.map(ev => `
+          <article class="event-card" data-id="${ev.id}" tabindex="0" role="button" aria-label="View ${ev.title}">
+            <div class="card-image">${ev.emoji}</div>
+            <div class="card-content">
+              <h3>${ev.title}</h3>
+              <div class="card-meta">
+                <span>${ev.venue}</span>
+                <span>${ev.city}</span>
+                <span>${ev.date}</span>
+              </div>
+              <div class="card-footer">
+                <span class="price-tag">${formatPrice(ev.price)}</span>
+                <span class="get-tickets">Get tickets →</span>
+              </div>
+            </div>
+          </article>
+        `).join('');
+
+        document.querySelectorAll('.event-card').forEach(card => {
+          card.addEventListener('click', () => openDetail(parseInt(card.dataset.id)));
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openDetail(parseInt(card.dataset.id));
+            }
+          });
+        });
+      }
+
+      // ---------- SEAT MAP GENERATION ----------
+      function generateSeatMap(eventId, tier) {
+        // deterministic pseudo-random based on eventId & seat index
+        const seats = [];
+        const rows = 4;
+        const cols = 10;
+        const totalSeats = rows * cols;
+        const basePrice = events.find(e => e.id === eventId)?.price || 80;
+        const tierMultiplier = tier === 'general' ? 1 : tier === 'vip' ? 1.8 : 2.5;
+        const pricePerSeat = Math.round(basePrice * tierMultiplier);
+
+        for (let i = 0; i < totalSeats; i++) {
+          // simple hash: sold if (eventId * 13 + i * 7) % 5 === 0
+          const sold = ((eventId * 13 + i * 7) % 5 === 0);
+          seats.push({
+            id: `seat-${i}`,
+            index: i,
+            sold: sold,
+            price: pricePerSeat,
+            row: Math.floor(i / cols) + 1,
+            col: (i % cols) + 1
+          });
+        }
+        return seats;
+      }
+
+      function renderSeatMap() {
+        if (!selectedEventId) return;
+        const seats = generateSeatMap(selectedEventId, selectedTier);
+        seatGrid.innerHTML = seats.map(seat => {
+          const isSelected = cart.some(item => item.seatId === seat.id && item.eventId === selectedEventId);
+          let classes = 'seat';
+          if (seat.sold) classes += ' sold';
+          else if (isSelected) classes += ' selected';
+          else classes += ' available';
+          return `<div class="${classes}" data-seat-id="${seat.id}" data-price="${seat.price}" 
+                       role="gridcell" aria-label="Seat ${seat.row}-${seat.col} ${seat.sold ? 'sold' : 'available'}"
+                       ${seat.sold ? 'aria-disabled="true"' : ''}>
+                    ${seat.row}${String.fromCharCode(65 + (seat.col - 1))}
+                  </div>`;
+        }).join('');
+
+        // attach listeners
+        seatGrid.querySelectorAll('.seat.available').forEach(el => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const seatId = el.dataset.seatId;
+            const price = parseFloat(el.dataset.price);
+            toggleSeat(seatId, price);
+          });
+        });
+      }
+
+      function toggleSeat(seatId, price) {
+        if (!selectedEventId) return;
+        const existingIndex = cart.findIndex(item => item.eventId === selectedEventId && item.seatId === seatId);
+        if (existingIndex !== -1) {
+          cart.splice(existingIndex, 1);
+        } else {
+          cart.push({
+            eventId: selectedEventId,
+            seatId: seatId,
+            tier: selectedTier,
+            price: price
+          });
+        }
+        updateCartBadge();
+        renderSeatMap(); // re-render to reflect selection
+        if (cart.length > 0 && !timerInterval) startTimer();
+        if (cart.length === 0) stopTimer();
+      }
+
+      // ---------- OPEN DETAIL ----------
+      function openDetail(eventId) {
+        selectedEventId = eventId;
+        const ev = events.find(e => e.id === eventId);
+        if (!ev) return;
+
+        detailTitle.textContent = ev.title;
+        detailVenue.textContent = `${ev.venue} · ${ev.city} · ${ev.date}`;
+        detailPanel
